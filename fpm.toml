@@ -1,0 +1,12 @@
+name = "hello-gldm"
+version = "0.1.0"
+license = "license"
+author = "kuoshuching"
+maintainer = "guosq@126.com"
+copyright = "Copyright 2023, kuoshuching"
+[build]
+auto-executables = true
+auto-tests = true
+auto-examples = true
+[install]
+library = false
