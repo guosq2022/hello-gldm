@@ -6,7 +6,7 @@ module hello_gldm
 
     real(8) :: temp = 0., paray = 0.02
     integer :: nr1 = 1, nmax = 800, npas = 1, n1cor = 101
-    integer :: opt1 = 1, opt4 = 1, opt5 = 1, opt6 = 1, &
+    integer :: opt1 = 1, opt2 = 0, opt4 = 1, opt5 = 1, opt6 = 1, &
     & opt7 = 1
 
 contains
@@ -23,43 +23,44 @@ contains
 
         real(8) :: a0, a1, a2, as, avol, alpha, a1unt, a1det, a2unt, a2det, &
         & aunti, adeti, amo, aco, ac2, ac4, ac6, arc, amort, akr, ak2, aak, &
-        & a
+        & a, axxo
         real(8) :: beta, beta1, beta2, beta3, bdif, bs, bc, b
         real(8) :: coefq, cosep, coec, c, c2, c3, c4, c5, c7, c8, c9, &
         & c2s2, cp2, cp, cp3, cp4, cpac, c2ac, csd, cpt12, cpzv, czv, &
         & cp4z, c4z, cos2x, couch, coooo, co2oo, cosoi, cos2, css, ccc, &
-        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2
+        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2, croi
         real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d, &
-        & dx, devr1, devr2, de2, deooi
+        & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent
         real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es, &
-        & ecart, ec, en, e, etota, erot, ecer
-        real(8) :: fs, f, fl, fr, fm
-        real(8) :: h, hh, hv, hy
+        & ecart, ec, en, e, etota, erot, ecer, ebarr, ebafi, econt
+        real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1
+        real(8) :: h, hh, hv, hy, h1, h2, h1ph2
         real(8) :: llll
         real(8) :: ooo, oi, ooooi
-        real(8) :: pas, ph1, ph2, ph3, phs1, phs2, phs3, pisur2, pasin
+        real(8) :: pas, ph1, ph2, ph3, phs1, phs2, phs3, pisur2, pasin, &
+        & penta, pentb, paeb
         real(8) :: qexp, qvalu, qupi1, qupi2, qupig, qreac, quadr, q2
         real(8) :: r1, r2, ro, rkas, raya1, raya2, rfiss, rayon, rayo2, rayo3, &
         & r1pr2, rac, rat12, rcent, r13, r23, r2x, rrx, rrr, rcc, r2j, rjj, &
-        & rayo5
+        & rayo5, rbarr
         real(8) :: sep, s, s2, s4, sprim, sp2, sp4, sqzv, sqcp, sqc, &
         & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x, shell,   &
-        & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6
+        & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6, step
         real(8) :: t12, tcrit, tol, tolf, tetax
         real(8) :: r2k, rkk
         real(8) :: uti, u
         real(8) :: vo1
-        real(8) :: wx, w1, w2, w3, ws1, ws2, ws3
+        real(8) :: wx, w1, w2, w3, ws1, ws2, ws3, wh
         real(8) :: x, xuu, xli, xri, xl1, xr, xm, xcent, xl, xu, &
         & xxmoq, xmom2, xmo1, xmo2, xlmom
         real(8) :: y
         real(8) :: z0, z1, z2, z1i, z1i2, z2i, z2i2, zi, zii, z1z2, z2sua, z1sa1, &
         & z2sa2, z4, za, zv, zv2, zv4, zz1, zz2
         real(8), parameter :: pi = 3.1415926535
-        real(8), dimension(999) :: rai, etot
+        real(8), dimension(2000) :: rai, etot, rt, erego, deri
         real(8), dimension(100) :: rintx, devr, y1, vo, voo, bcc
         integer :: nsec1, nsec2, nh1, nh2, nr1p1, nm, nmax1, i, j, k, iend, ier, m, &
-        & npasin, intrx, jj
+        & npasin, intrx, jj, nema, nem, jr, ir, kr, jrt, krm1, jd, kkk
 
         a2 = frag_a2
         z2 = frag_z2
@@ -593,30 +594,108 @@ contains
                 en = qupig*u
 
                 if (abs(a1 - a2) < 0.01) then
-                    xmom2 = 0.62996052 + (0.625 * rcent * rcent) / rayo2
+                    xmom2 = 0.62996052 + (0.625*rcent*rcent)/rayo2
                 else
-                    r13 = r1 * r1 * r1
-                    r23 = r2 * r2 * r2
-                    xmom2 = 0.4 * (r1 ** 5 + r2 ** 5) + r13 * r23 * rcent * rcent / (r13 + r23)
-                    xmom2 = xmom2 / (0.4 * rayo2 * (r13 + r23))
-                endif
-                
-                erot = xlmom * (xlmom + 1.) * 51.8325 / (a0 * rayo2) / xmom2
+                    r13 = r1*r1*r1
+                    r23 = r2*r2*r2
+                    xmom2 = 0.4*(r1**5 + r2**5) + r13*r23*rcent*rcent/(r13 + r23)
+                    xmom2 = xmom2/(0.4*rayo2*(r13 + r23))
+                end if
+
+                erot = xlmom*(xlmom + 1.)*51.8325/(a0*rayo2)/xmom2
                 etota = ec + en + ecer - ecinf + erot + couch - (qexp - qreac)
                 etot(j) = etota
-                
-                quadr = 2.094395 * rcent * rcent / rayo2
-                q2 = 0.37797632 * rayo2 + 0.25 * rcent * rcent
-                
+
+                quadr = 2.094395*rcent*rcent/rayo2
+                q2 = 0.37797632*rayo2 + 0.25*rcent*rcent
+
                 ! end two body
             end if ! end calculation for two-body shapes
 
         end do
 
+        ! The essential characteristics of the barrier are given by
+! the following lines (the curve has been smoothed before)
+! The derivatives of the potential are given for dynamics
+
+        do nema = nr1p1, nmax1
+            croi = (etot(nema) - etot(nema - 1))*(etot(nema + 1) - etot(nema))
+            if (croi <= 0) then
+                ebarr = etot(nema) + (qexp - qreac)
+                ebafi = ebarr + eninf - eo - (qexp - qreac)
+                rbarr = rai(nema)
+                wh = (etot(nema + 1) + etot(nema - 1) - 2.0d0*etot(nema))/(pas*pas)
+                if (wh <= 0) then
+                    wh = (dsqrt(-wh)*6.4421d0)/((a1*a2/a0)**0.5d0)
+                    nem = nema
+                end if
+            end if
+        end do
+
+        econt = etot(n1cor + 1) + (qexp - qreac)
+        step = 0.1
+        jr = 1
+        rt(jr) = (int(rai(nm)/step) + 1)*step
+
+        do while (rt(jr) - rai(nmax - 1) <= 0)
+            do ir = nm, nmax
+                if (rt(jr) - rai(ir) <= 0) exit
+            end do
+            d9 = dabs(rt(jr) - rai(ir))
+            d1 = dabs(rt(jr) - rai(ir - 1))
+            if (d9 > d1) ir = ir - 1
+            h1 = rai(ir) - rai(ir - 1)
+            h2 = rai(ir + 1) - rai(ir)
+            h1ph2 = h1 + h2
+            fm1 = etot(ir - 1)
+            fo = etot(ir)
+            fp1 = etot(ir + 1)
+            axxo = (rt(jr) - rai(ir))*2.0
+            dvj = fm1*(axxo - h2)/h1/h1ph2 &
+            &   + fp1*(axxo + h1)/h2/h1ph2 &
+            &   + fo*(-axxo + h2 - h1)/h1/h2
+            erego(jr) = dvj*(rai(ir) - rt(jr))*(-1.0) + fo
+            jr = jr + 1
+            rt(jr) = rt(jr - 1) + step
+        end do
+
+        kr = jr - 1
+
+        do jr = 1, kr
+            if (nr1 - n1cor + 5 > 0) exit
+            if (rt(jr) - r1pr2 + 0.1 > 0) then
+                jrt = jr
+                penta = (erego(jr + 5) - erego(jr + 4))/h
+                pentb = (erego(jr - 1) - erego(jr - 2))/h
+                di4m1 = erego(jr + 4) - erego(jr - 1)
+                dpent = penta - pentb
+                paeb = 2.5*(penta + pentb)
+                erego(jr) = erego(jr - 1) + (pentb + 0.166666666*dpent)*di4m1/paeb
+                erego(jr + 1) = erego(jr) + (pentb + 0.3333333*dpent)*di4m1/paeb
+                erego(jr + 2) = erego(jr + 1) + (pentb + 0.5*dpent)*di4m1/paeb
+                erego(jr + 3) = erego(jr + 2) + (pentb + 0.6666666*dpent)*di4m1/paeb
+                exit
+            end if
+        end do
+
+        krm1 = kr - 1
+
+        do jd = 2, krm1
+            deri(jd) = (erego(jd + 1) - erego(jd - 1))/(2.0*h)
+        end do
+
+        if (opt2 == 0) then
+            erego(1:krm1) = erego(1:krm1) + (qexp - qreac)
+            write (*, 774)
+            write (*, 410) (rt(jr), erego(jr), deri(jr), jr=2, krm1)
+        end if
+
+774     format(/, ' ENERGY RELATIVELY TO THE INFINITY (FUSION BARRIER)',/)
+410     format(2(' R', f10.3, ' E', f10.3, ' der', f10.5))
+
         write (*, *) "here is ok !"
 
     end subroutine gldm
-
 
     !======================================================================
     ! sub and func below
