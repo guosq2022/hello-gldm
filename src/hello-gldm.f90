@@ -4,7 +4,7 @@ module hello_gldm
 
     public :: say_hello, gldm
 
-    real(8) :: temp = 0., xlmom = 0., paray = 0.02
+    real(8) :: temp = 0., paray = 0.02
     integer :: nr1 = 1, nmax = 800, npas = 1, n1cor = 101
     integer :: opt1 = 1, opt4 = 1, opt5 = 1, opt6 = 1, &
     & opt7 = 1
@@ -32,28 +32,31 @@ contains
         real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d, &
         & dx, devr1, devr2, de2, deooi
         real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es, &
-        & ecart, ec, en, e
+        & ecart, ec, en, e, etota, erot, ecer
         real(8) :: fs, f, fl, fr, fm
         real(8) :: h, hh, hv, hy
+        real(8) :: llll
         real(8) :: ooo, oi, ooooi
         real(8) :: pas, ph1, ph2, ph3, phs1, phs2, phs3, pisur2, pasin
-        real(8) :: qexp, qvalu, qupi1, qupi2, qupig, qreac
+        real(8) :: qexp, qvalu, qupi1, qupi2, qupig, qreac, quadr, q2
         real(8) :: r1, r2, ro, rkas, raya1, raya2, rfiss, rayon, rayo2, rayo3, &
-        & r1pr2, rac, rat12, rcent, r13, r23, r2x, rrx, rrr, rcc, r2j, rjj
+        & r1pr2, rac, rat12, rcent, r13, r23, r2x, rrx, rrr, rcc, r2j, rjj, &
+        & rayo5
         real(8) :: sep, s, s2, s4, sprim, sp2, sp4, sqzv, sqcp, sqc, &
         & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x, shell,   &
-        & s2m1, sp2m1, siooo, sinoi, sin2, siooi
+        & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6
         real(8) :: t12, tcrit, tol, tolf, tetax
         real(8) :: r2k, rkk
-        real(8) :: uti
+        real(8) :: uti, u
         real(8) :: vo1
         real(8) :: wx, w1, w2, w3, ws1, ws2, ws3
-        real(8) :: x, xuu, xli, xri, xl1, xr, xm, xcent, xl, xu
+        real(8) :: x, xuu, xli, xri, xl1, xr, xm, xcent, xl, xu, &
+        & xxmoq, xmom2, xmo1, xmo2, xlmom
         real(8) :: y
         real(8) :: z0, z1, z2, z1i, z1i2, z2i, z2i2, zi, zii, z1z2, z2sua, z1sa1, &
         & z2sa2, z4, za, zv, zv2, zv4, zz1, zz2
         real(8), parameter :: pi = 3.1415926535
-        real(8), dimension(999) :: rai
+        real(8), dimension(999) :: rai, etot
         real(8), dimension(100) :: rintx, devr, y1, vo, voo, bcc
         integer :: nsec1, nsec2, nh1, nh2, nr1p1, nm, nmax1, i, j, k, iend, ier, m, &
         & npasin, intrx, jj
@@ -63,6 +66,8 @@ contains
         z1 = frag_z1
         a1 = frag_a1
         qexp = qexp_in
+        llll = 10.0
+        xlmom = 10.0
         write (*, *) 'a1, z1, a2, z2, qexp:', a1, z1, a2, z2, qexp
 
         ! 计算t12
@@ -160,12 +165,16 @@ contains
         difec = 0.864*(z1*z1/r1 + z2*z2/r2) + 1.44*z1z2/r1pr2 - (z1 + z2) &
         &        *(z1 + z2)*(.864*(r1**5.+r2**5.) + 1.44*((r1*r2)**3.)/r1pr2) &
         &        /(rayo3*rayo3)
+        ! disco=discontinuity at the contact point: two body minus one body energies
         disco = difes + difec + difvol
+
         z1sa1 = z1/a1
         z2sa2 = z2/a2
 
         ! TODO
         amo = 0.320*1.2249
+        shell = 0.0
+
         ph1 = 2.*r1*r1
         ph2 = 4.*r1*r1*r1*r1
         ph3 = 2.*ph1
@@ -182,8 +191,7 @@ contains
         c9 = .1621267*xuu
 
         do j = nr1, nmax, npas
-            if (j <= n1cor) then
-                ! begin Q M S
+            if (j <= n1cor) then ! begin one-body shapes (QMS)
                 s = (1.*(n1cor - j))/(1.*(n1cor - 1))
                 if (j <= 1) s = 0.9995
                 if (j < nr1) s = 0.9995
@@ -348,11 +356,12 @@ contains
                 es = eso*bs
 
                 !----------------------------------------------------------
-                ! damping of shell and pairing effects for one-body shapes
-                !----------------------------------------------------------
+                ! begin the damping of shell and pairing for one-body shapes
+
                 npasin = 40
                 pisur2 = pi/2.
                 pasin = pisur2/(npasin - 1)
+
                 do intrx = 1, npasin
                     tetax = (intrx - 1)*pasin
                     sinox = sin(tetax)
@@ -387,6 +396,9 @@ contains
                 ecart = ecart/(amo*amo)
                 amort = (1.0 - 2.0*ecart)*dexp(-ecart)
                 couch = shell*amort
+
+                ! end the damping of shell and pairing for one-body shapes
+                !----------------------------------------------------------
 
                 !-------------------------------------------------------
                 ! begin of the coulomb energy for one-body shapes
@@ -486,25 +498,129 @@ contains
                 ! end of the proximity energy for one-body shapes
                 ! -------------------------------------------------------------
 
-                ! store total energy for one-body shapes
+                ! -------------------------------------------------------------
+                ! taking into account the discontinuity and qexp at the contact point
+                etota = disco*(rai(j) - rai(1))/(r1pr2 - rai(1))
+                etota = etota + (qexp - qreac)*(-rai(j) + r1pr2)/(r1pr2 - rai(1))
+                etota = etota + en + ec + es + evolsp - (ess + ecinf + evoinf) - (qexp - qreac)
+                ! end taking into account the discontinuity and qexp at the contact point
+                ! -------------------------------------------------------------
 
-                ! end Q M S
-            end if
+                ! -------------------------------------------------------------
+                ! begin the moments and rotation energy for one-body shapes
+                s6 = s2*s4
+                rayo5 = rayo2*rayo3
+                if (abs(a1 - a2) < 0.01) then
+                    xxmoq = argsh(sqrt((1.0 - s2)/s2))/sqrt(1.0 - s2)
+                    xmom2 = 112.0/s2 + 8.0 + 30.0*s2 - 135.0*s4 + (120.0*s4 - 135.0*s6)*xxmoq
+                    xmom2 = xmom2*c3*c2*s2/(512.0*(1.0 - s2)*rayo5)
+                else
+                    xmo1 = argsh(2.0*sqrt(1.0 - s2)/s2)*s2/2.0/sqrt(1.0 - s2)
+                    xmo1 = xmo1*s4*(8.0 - 9.0*s2)/128.0/(1.0 - s2) - 1.0/15.0 + s4/8.0
+                    xmo1 = c3*c2*(xmo1 + (2.0 - s2)*(8.0 - 7.0*s4)/128.0/(1.0 - s2))
+                    xmo2 = argsh(2.0*sqrt(1.0 - sp2)/sp2)*sp2/2.0/sqrt(1.0 - sp2)
+                    xmo2 = xmo2*sp4*(8.0 - 9.0*sp2)/128.0/(1.0 - sp2) - 1.0/15.0 + sp4/8.0
+                    xmo2 = cp2*cp3*(xmo2 + (2.0 - sp2)*(8.0 - 7.0*sp4)/128.0/(1.0 - sp2))
+                    xmo1 = xmo1*1.875/rayon**5
+                    xmo2 = xmo2*1.875/rayon**5
+                    xmom2 = xmo1 + xmo2 - 2.5*xcent**2/rayon**2
+                end if
+                erot = 51.8325*xlmom*(xlmom + 1.)/(a0*rayo2*xmom2)
+                ! 51.8325=0.5*hbar2/m0/0.4 with m0=939.0327 MeV
+                ! end the moments and rotation energy
+                ! ----------------------------------------------------------------
+
+                ! store the total energy
+                etota = etota + erot + couch
+                etot(j) = etota
+                ! end store the total energy
+
+                if (abs(a1 - a2) < 0.01) then
+                    xxmoq = argsh(sqrt((1.0 - s2)/s2))/sqrt(1.0 - s2)
+                    quadr = 16.0/s2 - 8.0 - 14.0*s2 + 15.0*s4 - (24.0*s4 - 15.0*s2*s4)*xxmoq
+                    quadr = 3.141593*quadr*c3*c2*s2/(96.0*(1.0 - s2)*rayo5)
+                    q2 = 0.6*xmom2 - 0.0596831*quadr
+                    q2 = q2*rayo2
+                else
+                    quadr = 1.0
+                    q2 = 1.0
+                end if
+
+            end if ! end one-body shapes (QMS)
+
+            ! end one-body shapes
+            ! -------------------------------------------------------------
 
             ! -------------------------------------------------------------
-            ! (TODO) begin calculation for two-body shapes
-            if (j > n1cor) then
-                ! begin two body
+            ! begin two-body shapes
+
+            if (j > n1cor) then ! begin calculation for two-body shapes
                 s = 0.0
+                couch = 0.0
+                sprim = 0.0
+                c = 2.*r1
+                ier = 0
+                rcent = r1pr2 + (j - n1cor)*pas
+                rai(j) = rcent
+                ec = ecinf + coec/rcent
+                ! 两种计算离心式方法，哪个对？
+                ! method 1:
+                ecer = 20.8000*llll*(llll + 1.000)/((a1*a2/a0)*rcent*rcent)
+
+                ! method 2:
+                if (abs(a1 - a2) < 0.001) then
+                    xmom2 = .62996052 + (.625*rcent*rcent)/(rayo2)
+                else
+                    r13 = r1*r1*r1
+                    r23 = r2*r2*r2
+                    xmom2 = 0.4*(r1**5 + r2**5) &
+                    & + r13*r23*rcent*rcent/(r13 + r23)
+                    xmom2 = xmom2/(0.4*rayo2*(r13 + r23))
+                end if
+                ecer = xlmom*(xlmom + 1.)*51.8325/(a0*rayo2)/xmom2
+
+                es = ess
+                sep = (j - n1cor)*pas + cosep
+                u = 0.04063719*(phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 + d5) &
+                & + phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 - d5))
+                u = u + 0.09032408*(phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 + c7) &
+                & + phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 - c7))
+                u = u + 0.1303053*(phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 + c8) &
+                & + phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 - c8))
+                u = u + 0.1561735*(phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 + c9) &
+                & + phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4 - c9))
+                u = xuu*(u + 0.1651197*phi(bdif, sep, ph1, ph2, ph3, phs1, phs2, phs3, z4))
+                en = qupig*u
+
+                if (abs(a1 - a2) < 0.01) then
+                    xmom2 = 0.62996052 + (0.625 * rcent * rcent) / rayo2
+                else
+                    r13 = r1 * r1 * r1
+                    r23 = r2 * r2 * r2
+                    xmom2 = 0.4 * (r1 ** 5 + r2 ** 5) + r13 * r23 * rcent * rcent / (r13 + r23)
+                    xmom2 = xmom2 / (0.4 * rayo2 * (r13 + r23))
+                endif
+                
+                erot = xlmom * (xlmom + 1.) * 51.8325 / (a0 * rayo2) / xmom2
+                etota = ec + en + ecer - ecinf + erot + couch - (qexp - qreac)
+                etot(j) = etota
+                
+                quadr = 2.094395 * rcent * rcent / rayo2
+                q2 = 0.37797632 * rayo2 + 0.25 * rcent * rcent
+                
                 ! end two body
-            end if
+            end if ! end calculation for two-body shapes
 
         end do
 
-        write (*, *) "here is ok !", bc
+        write (*, *) "here is ok !"
 
     end subroutine gldm
 
+
+    !======================================================================
+    ! sub and func below
+    ! =====================================================================
     function v(x)
         real(8) :: x, v
         v = 1./3.+x*x*0.5 + &
