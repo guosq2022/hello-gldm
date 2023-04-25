@@ -6,8 +6,8 @@ module hello_gldm
 
     real(8) :: temp = 0., paray = 0.02
     integer :: nr1 = 1, nmax = 800, npas = 1, n1cor = 101
-    integer :: opt1 = 1, opt2 = 0, opt4 = 1, opt5 = 1, opt6 = 1, &
-    & opt7 = 1
+    integer :: opt1 = 1, opt2 = 0, opt3 = 0, opt4 = 1, opt5 = 1, opt6 = 1, &
+    & opt7 = 1, opt11 = 0, opt12 = 0
 
 contains
 
@@ -23,44 +23,48 @@ contains
 
         real(8) :: a0, a1, a2, as, avol, alpha, a1unt, a1det, a2unt, a2det, &
         & aunti, adeti, amo, aco, ac2, ac4, ac6, arc, amort, akr, ak2, aak, &
-        & a, axxo
+        & a, axxo, actn
         real(8) :: beta, beta1, beta2, beta3, bdif, bs, bc, b
         real(8) :: coefq, cosep, coec, c, c2, c3, c4, c5, c7, c8, c9, &
         & c2s2, cp2, cp, cp3, cp4, cpac, c2ac, csd, cpt12, cpzv, czv, &
         & cp4z, c4z, cos2x, couch, coooo, co2oo, cosoi, cos2, css, ccc, &
-        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2, croi
+        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2, croi, coeff1
         real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d, &
         & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent
         real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es, &
-        & ecart, ec, en, e, etota, erot, ecer, ebarr, ebafi, econt
+        & ecart, ec, en, e, etota, erot, ecer, ebarr, ebafi, econt, eref
         real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1
         real(8) :: h, hh, hv, hy, h1, h2, h1ph2
         real(8) :: llll
         real(8) :: ooo, oi, ooooi
         real(8) :: pas, ph1, ph2, ph3, phs1, phs2, phs3, pisur2, pasin, &
-        & penta, pentb, paeb
+        & penta, pentb, paeb, pp12
         real(8) :: qexp, qvalu, qupi1, qupi2, qupig, qreac, quadr, q2
         real(8) :: r1, r2, ro, rkas, raya1, raya2, rfiss, rayon, rayo2, rayo3, &
         & r1pr2, rac, rat12, rcent, r13, r23, r2x, rrx, rrr, rcc, r2j, rjj, &
-        & rayo5, rbarr
+        & rayo5, rbarr, redmas
         real(8) :: sep, s, s2, s4, sprim, sp2, sp4, sqzv, sqcp, sqc, &
         & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x, shell,   &
         & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6, step
         real(8) :: t12, tcrit, tol, tolf, tetax
-        real(8) :: r2k, rkk
+        real(8) :: r2k, rkk, r1t, r2t, rout, routth
         real(8) :: uti, u
-        real(8) :: vo1
-        real(8) :: wx, w1, w2, w3, ws1, ws2, ws3, wh
+        real(8) :: vo1, vpot1, vpot2
+        real(8) :: wx, w1, w2, w3, ws1, ws2, ws3, wh, width
         real(8) :: x, xuu, xli, xri, xl1, xr, xm, xcent, xl, xu, &
-        & xxmoq, xmom2, xmo1, xmo2, xlmom
+        & xxmoq, xmom2, xmo1, xmo2, xlmom, xlamb, xlog10
         real(8) :: y
         real(8) :: z0, z1, z2, z1i, z1i2, z2i, z2i2, zi, zii, z1z2, z2sua, z1sa1, &
         & z2sa2, z4, za, zv, zv2, zv4, zz1, zz2
         real(8), parameter :: pi = 3.1415926535
-        real(8), dimension(2000) :: rai, etot, rt, erego, deri
+        real(8), dimension(2000) :: rai, etot, rt, erego, erefi, deri
         real(8), dimension(100) :: rintx, devr, y1, vo, voo, bcc
+        integer, dimension(10) :: nmin12
         integer :: nsec1, nsec2, nh1, nh2, nr1p1, nm, nmax1, i, j, k, iend, ier, m, &
-        & npasin, intrx, jj, nema, nem, jr, ir, kr, jrt, krm1, jd, kkk
+        & npasin, intrx, jj, nema, nem, jr, ir, kr, jrt, krm1, jd, &
+        & ncont, nminim, n111, n222, ij, nabsmi, ji, ikk, nturn, ii, l, ll
+
+        open (10, file='result.dat', status='replace')
 
         a2 = frag_a2
         z2 = frag_z2
@@ -615,8 +619,8 @@ contains
         end do
 
         ! The essential characteristics of the barrier are given by
-! the following lines (the curve has been smoothed before)
-! The derivatives of the potential are given for dynamics
+        ! the following lines (the curve has been smoothed before)
+        ! The derivatives of the potential are given for dynamics
 
         do nema = nr1p1, nmax1
             croi = (etot(nema) - etot(nema - 1))*(etot(nema + 1) - etot(nema))
@@ -684,14 +688,118 @@ contains
             deri(jd) = (erego(jd + 1) - erego(jd - 1))/(2.0*h)
         end do
 
-        if (opt2 == 0) then
-            erego(1:krm1) = erego(1:krm1) + (qexp - qreac)
+        ! tabulate the fusion and fission curve
+        erefi(1:krm1) = erego(1:krm1) - qreac
+        erego(1:krm1) = erego(1:krm1) + (qexp - qreac)
+
+        ! print fusion and fission curve
+        if (opt2 /= 0) then
+            open (11, file='fusbar.dat', status='replace')
             write (*, 774)
             write (*, 410) (rt(jr), erego(jr), deri(jr), jr=2, krm1)
+            write (11, 774)
+            write (11, 410) (rt(jr), erego(jr), deri(jr), jr=2, krm1)
+            close (11)
+        else
+            open (12, file='fisbar.dat', status='replace')
+            write (*, 874)
+            write (*, 410) (rt(jr), erefi(jr), deri(jr), jr=2, krm1)
+            write (12, 874)
+            write (12, 410) (rt(jr), erefi(jr), deri(jr), jr=2, krm1)
         end if
 
-774     format(/, ' ENERGY RELATIVELY TO THE INFINITY (FUSION BARRIER)',/)
+774     format(/, ' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER',/)
+874     format(/, ' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER',/)
 410     format(2(' R', f10.3, ' E', f10.3, ' der', f10.5))
+
+        ! ----------------------------------------------------------
+        ! half-life determination
+        do i = 1, krm1 - 1
+            if (rt(i) <= r1pr2 .and. rt(i + 1) > r1pr2) then
+                ncont = i
+            end if
+        end do
+
+! 遍历erefi和rt数组，查找潜在的最小值
+        if (opt11 == 0 .and. opt3 == 0) then
+            redmas = (a1*a2)/a0
+            coeff1 = 1.d0/20.9d0
+            nminim = 0
+            n111 = krm1 - 1
+            n222 = krm1 - 2
+            if (erefi(1) < erefi(2)) then
+                nminim = nminim + 1
+                nmin12(nminim) = 1
+            end if
+            do ij = 2, n111
+                if (erefi(ij - 1) > erefi(ij) .and. erefi(ij) < erefi(ij + 1) &
+                & .and. rt(ij) < r1pr2) then
+                    nminim = nminim + 1
+                    nmin12(nminim) = ij
+                end if
+            end do
+            if (nminim > 0) then
+                nabsmi = nmin12(1)
+                do ji = 1, nminim
+                    ikk = nmin12(ji)
+                    ! In the following instruction lt corresponds to the tunneling
+                    ! from the deepest well and gt would correspond to the highest well
+                    ! i.e the isomeric state
+                    ! THE ENERGY REFERENCE IS THE SPHERE ENERGY
+                    ! AND THE INTEGRATION IS DONE FROM R1+R2     EREF=0.
+                    if (opt12 == 0) then
+                        if (erefi(ikk) < erefi(nabsmi)) nabsmi = ikk
+                    else
+                        if (erefi(ikk) > erefi(nabsmi)) nabsmi = ikk
+                    end if
+                end do
+                write (*, 10003) rt(nabsmi), erefi(nabsmi)
+10003           format(/, ' MINIMUM CHARACTERISTICS:', ' R=', f14.3, ' E=', f12.3,/)
+            else
+                write (*, 10001)
+10001           format(' THERE IS NO POTENTIAL ENERGY MINIMUM',/)
+            end if
+        end if
+
+        nturn = 0
+        eref = 0.0
+        do ii = nabsmi, n222 - 1
+            if (erefi(ii) >= 0.0 .and. erefi(ii + 1) <= 0.0 .and. rt(ii) > r1pr2) then
+                nturn = ii
+                r1t = rt(nturn)
+                r2t = rt(nturn + 1)
+                vpot1 = erefi(nturn)
+                vpot2 = erefi(nturn + 1)
+                rout = (eref - vpot1)/(vpot2 - vpot1)*(r2t - r1t) + r1t
+                routth = 0.7200*z2*z1/qexp &
+                & + dsqrt(routth*routth + 20.8*llll*(llll + 1.000)/qexp)
+                actn = (dsqrt(coeff1*bmas(rat12, rayon, rt(ncont + 1), r1pr2, redmas) &
+                & *dabs((erefi(ncont + 1) - erefi(ncont))))*(rt(ncont + 1) - rt(ncont)) &
+                & + dsqrt(coeff1*bmas(rat12, rayon, r1t, r1pr2, redmas) &
+                & *dabs((vpot1 - eref)))*(rout - r1t))*0.5d0
+                do l = ncont + 1, nturn - 1
+                    ll = l + 1
+                    actn = actn + (dsqrt(coeff1*bmas(rat12, rayon, rt(ll), r1pr2, redmas) &
+                    & *dabs(erefi(ll) - eref)) &
+                    & + dsqrt(coeff1*bmas(rat12, rayon, rt(l), r1pr2, redmas) &
+                    & *dabs(erefi(l) - eref)))**(rt(ll) - rt(l))*0.5d0
+                end do
+                write (*, "(4F12.6, I5)") rt(nturn), rt(nturn + 1), rout, routth, nturn
+                exit
+            end if
+        end do
+
+        if (nturn == 0) stop 'THERE IS NO TURNING POINT!'
+
+        xlamb = 2.0d19*exp(-2.0d0*actn)
+        pp12 = exp(-2.0d0*actn)
+        width = 6.582d-22*xlamb*1000.0d0
+        t12 = log(2.0d0)/xlamb
+        xlog10 = log10(t12)
+
+        write (*, "('action = ', f14.6, /, 't1/2 = ', f14.6, ' s', /, &
+        & 'log10(t12) = ', f14.6, /, 'pp12 = ', f14.6, /)") &
+        & actn, t12, xlog10, pp12
 
         write (*, *) "here is ok !"
 
@@ -879,5 +987,20 @@ contains
         end if
 
     end function phi
+
+    function bmas(rat12, rayon, rx, r1pr2, redmas)
+        implicit none
+        real(8), intent(in) :: rat12, rayon, rx, r1pr2, redmas
+        real(8) :: aux, bmas
+
+        if (rx < r1pr2) then
+            aux = ((r1pr2 - rx)/(r1pr2 - rat12))**2
+            bmas = (16.0d0*17.0d0*aux/15.0d0 &
+                   & *dexp(-128.0d0/51.0d0*((rx - rat12)/rayon)) + 1.0d0) &
+                  & *redmas
+        else
+            bmas = redmas
+        end if
+    end function bmas
 
 end module hello_gldm

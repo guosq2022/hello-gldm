@@ -12,7 +12,7 @@ program main
   z2 = 2.
   a1 = a0 - a2
   z1 = z0 - z2
-  qexp = 4.00
+  qexp = 8.9542
 
   call gldm(a1, z1, a2, z2, qexp, t12)
 
