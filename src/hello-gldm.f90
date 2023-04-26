@@ -6,9 +6,16 @@ module hello_gldm
 
     real(8) :: temp = 0., paray = 0.02
     integer :: nr1 = 1, nmax = 800, npas = 1, n1cor = 101
-    integer :: opt1 = 1, opt2 = 0, opt3 = 0, opt4 = 1, opt5 = 1, opt6 = 1, &
-    & opt7 = 1, opt11 = 0, opt12 = 0
-
+    integer :: opt11 = 0, opt12 = 0
+    integer, parameter :: opt1 = 1 ! to write s, sp, c, es ec, en, et
+    integer, parameter :: opt2 = 0 ! to give energy relative to the infinity (fusion barrier).
+    integer, parameter :: opt3 = 0 ! to give energy relative to the ground state (fission barrier).
+    integer, parameter :: opt4 = 1 ! to determine the radii from the total system, otherwise, from each nucleus.
+    integer, parameter :: opt5 = 0 ! to calculate fusion cross sections using GLDM.
+    integer, parameter :: opt6 = 1 ! to give ra, rb, tl, hw, elmax (characteristics of fusion barrier).
+    integer, parameter :: opt7 = 1 ! to take into account ellipsoidal deformation for fusion.
+    integer, parameter :: opt8 = 1 ! to take into account the shell effects
+    integer, parameter :: opt10 = 0 ! to calculate fusion cross section using WONG FORMULA.
 contains
 
     subroutine say_hello
@@ -23,46 +30,50 @@ contains
 
         real(8) :: a0, a1, a2, as, avol, alpha, a1unt, a1det, a2unt, a2det, &
         & aunti, adeti, amo, aco, ac2, ac4, ac6, arc, amort, akr, ak2, aak, &
-        & a, axxo, actn
+        & a, axxo, actn, auxse
         real(8) :: beta, beta1, beta2, beta3, bdif, bs, bc, b
         real(8) :: coefq, cosep, coec, c, c2, c3, c4, c5, c7, c8, c9, &
         & c2s2, cp2, cp, cp3, cp4, cpac, c2ac, csd, cpt12, cpzv, czv, &
         & cp4z, c4z, cos2x, couch, coooo, co2oo, cosoi, cos2, css, ccc, &
-        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2, croi, coeff1
+        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2, croi, coeff1, &
+        & concd, conca, chera, cherb
         real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d, &
-        & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent
+        & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent, deshw
         real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es, &
-        & ecart, ec, en, e, etota, erot, ecer, ebarr, ebafi, econt, eref
-        real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1
-        real(8) :: h, hh, hv, hy, h1, h2, h1ph2
+        & ecart, ec, en, e, etota, erot, ecer, ebarr, ebafi, econt, eref, eee, &
+        & elmax, evme, emaxl
+        real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1, freq
+        real(8) :: h, hh, hv, hy, h1, h2, h1ph2, hw, hww
         real(8) :: llll
         real(8) :: ooo, oi, ooooi
         real(8) :: pas, ph1, ph2, ph3, phs1, phs2, phs3, pisur2, pasin, &
-        & penta, pentb, paeb, pp12
+        & penta, pentb, paeb, pp12, prodd, pila2, prod
         real(8) :: qexp, qvalu, qupi1, qupi2, qupig, qreac, quadr, q2
         real(8) :: r1, r2, ro, rkas, raya1, raya2, rfiss, rayon, rayo2, rayo3, &
         & r1pr2, rac, rat12, rcent, r13, r23, r2x, rrx, rrr, rcc, r2j, rjj, &
-        & rayo5, rbarr, redmas
+        & rayo5, rbarr, redmas, rol, rkl, rra, rrb, ra
         real(8) :: sep, s, s2, s4, sprim, sp2, sp4, sqzv, sqcp, sqc, &
         & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x, shell,   &
-        & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6, step
-        real(8) :: t12, tcrit, tol, tolf, tetax
-        real(8) :: r2k, rkk, r1t, r2t, rout, routth
+        & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6, step, secte, sect
+        real(8) :: t12, tcrit, tol, tolf, tetax, tzhw, tvar1, test, tvar2, ttl
+        real(8) :: r2k, rkk, r1t, r2t, rout, routth, rb, rrol
         real(8) :: uti, u
-        real(8) :: vo1, vpot1, vpot2
+        real(8) :: vo1, vpot1, vpot2, vartl
         real(8) :: wx, w1, w2, w3, ws1, ws2, ws3, wh, width
         real(8) :: x, xuu, xli, xri, xl1, xr, xm, xcent, xl, xu, &
         & xxmoq, xmom2, xmo1, xmo2, xlmom, xlamb, xlog10
         real(8) :: y
         real(8) :: z0, z1, z2, z1i, z1i2, z2i, z2i2, zi, zii, z1z2, z2sua, z1sa1, &
-        & z2sa2, z4, za, zv, zv2, zv4, zz1, zz2
+        & z2sa2, z4, za, zv, zv2, zv4, zz1, zz2, zhw
         real(8), parameter :: pi = 3.1415926535
-        real(8), dimension(2000) :: rai, etot, rt, erego, erefi, deri
+        real(8), dimension(2000) :: rai, etot, rt, erego, erefi, deri, et1, zz, tl
         real(8), dimension(100) :: rintx, devr, y1, vo, voo, bcc
         integer, dimension(10) :: nmin12
         integer :: nsec1, nsec2, nh1, nh2, nr1p1, nm, nmax1, i, j, k, iend, ier, m, &
         & npasin, intrx, jj, nema, nem, jr, ir, kr, jrt, krm1, jd, &
-        & ncont, nminim, n111, n222, ij, nabsmi, ji, ikk, nturn, ii, l, ll
+        & ncont, nminim, n111, n222, ij, nabsmi, ji, ikk, nturn, ii, l, ll, jm, ijk, &
+        & ie, ll5, lr, jrm1, lmax, jol, lex, irai, l2, ndim, lrr, lvl, l7, jjol, &
+        & nndim, le, l1
 
         open (10, file='result.dat', status='replace')
 
@@ -764,7 +775,7 @@ contains
         nturn = 0
         eref = 0.0
         do ii = nabsmi, n222 - 1
-            if (erefi(ii) >= 0.0 .and. erefi(ii + 1) <= 0.0 .and. rt(ii) > r1pr2) then
+            if (erefi(ii) >= eref .and. erefi(ii + 1) <= eref .and. rt(ii) > r1pr2) then
                 nturn = ii
                 r1t = rt(nturn)
                 r2t = rt(nturn + 1)
@@ -772,17 +783,17 @@ contains
                 vpot2 = erefi(nturn + 1)
                 rout = (eref - vpot1)/(vpot2 - vpot1)*(r2t - r1t) + r1t
                 routth = 0.7200*z2*z1/qexp &
-                & + dsqrt(routth*routth + 20.8*llll*(llll + 1.000)/qexp)
-                actn = (dsqrt(coeff1*bmas(rat12, rayon, rt(ncont + 1), r1pr2, redmas) &
-                & *dabs((erefi(ncont + 1) - erefi(ncont))))*(rt(ncont + 1) - rt(ncont)) &
-                & + dsqrt(coeff1*bmas(rat12, rayon, r1t, r1pr2, redmas) &
-                & *dabs((vpot1 - eref)))*(rout - r1t))*0.5d0
+                & + sqrt(routth*routth + 20.8*llll*(llll + 1.000)/qexp)
+                actn = (sqrt(coeff1*bmas(rat12, rayon, rt(ncont + 1), r1pr2, redmas) &
+                & *abs((erefi(ncont + 1) - erefi(ncont))))*(rt(ncont + 1) - rt(ncont)) &
+                & + sqrt(coeff1*bmas(rat12, rayon, r1t, r1pr2, redmas) &
+                & *abs((vpot1 - eref)))*(rout - r1t))*0.5d0
                 do l = ncont + 1, nturn - 1
                     ll = l + 1
-                    actn = actn + (dsqrt(coeff1*bmas(rat12, rayon, rt(ll), r1pr2, redmas) &
-                    & *dabs(erefi(ll) - eref)) &
-                    & + dsqrt(coeff1*bmas(rat12, rayon, rt(l), r1pr2, redmas) &
-                    & *dabs(erefi(l) - eref)))**(rt(ll) - rt(l))*0.5d0
+                    actn = actn + (sqrt(coeff1*bmas(rat12, rayon, rt(ll), r1pr2, redmas) &
+                    & *abs(erefi(ll) - eref)) &
+                    & + sqrt(coeff1*bmas(rat12, rayon, rt(l), r1pr2, redmas) &
+                    & *abs(erefi(l) - eref)))*(rt(ll) - rt(l))*0.5d0
                 end do
                 write (*, "(4F12.6, I5)") rt(nturn), rt(nturn + 1), rout, routth, nturn
                 exit
@@ -791,15 +802,162 @@ contains
 
         if (nturn == 0) stop 'THERE IS NO TURNING POINT!'
 
-        xlamb = 2.0d19*exp(-2.0d0*actn)
         pp12 = exp(-2.0d0*actn)
-        width = 6.582d-22*xlamb*1000.0d0
+        freq = 5.0d21
+        xlamb = freq*pp12
         t12 = log(2.0d0)/xlamb
         xlog10 = log10(t12)
 
-        write (*, "('action = ', f14.6, /, 't1/2 = ', f14.6, ' s', /, &
-        & 'log10(t12) = ', f14.6, /, 'pp12 = ', f14.6, /)") &
+        write (*, "('action = ', f14.6, /, 't1/2 = ', e14.6, ' s', /, &
+        & 'log10(t12) = ', f14.6, /, 'pp12 = ', e14.6, /)") &
         & actn, t12, xlog10, pp12
+
+        ! ----------------------------------------------------------------------------
+        ! begin fusion cross section with WONG FORMULA
+
+        if (opt10 == 1) then
+            tzhw = 0.0
+            do jm = 2, krm1
+                prodd = (erego(jm) - erego(jm - 1))*(erego(jm + 1) - erego(jm))
+                concd = erego(jm) - erego(jm - 1)
+                if ((prodd <= 0.0) .and. (concd >= 0.0)) then
+                    tzhw = 1.0
+                    ! zhw : second derivative of E and after hbaromega
+                    zhw = (erego(jm + 1) + erego(jm - 1) - 2.0*erego(jm))/(1.0*HH)
+                    zhw = (sqrt(abs(zhw))*6.4421)/((A1*A2/A0)**0.5)
+                end if
+            end do
+            if (tzhw <= 0.0) then
+                eee = ebarr - 11.0
+                write (*, 1753) zhw
+                ! print the cross section for each energy level
+                do ijk = 1, 100
+                    eee = eee + 1.0
+                    auxse = 1.0 + exp(depi*(eee - ebarr)/zhw)
+                    secte = (rbarr*rbarr*zhw/(2.0*eee))*log(auxse)*10.0
+                    write (*, 5768) eee, secte
+                end do
+            end if
+        end if
+
+1753    format(/, ' cross section (WONG FORMULA valid for medium E):', &
+                 & ' HW(MeV)=', f6.4)
+5768    format(' E=', f9.5, ' section efficace(mb)=', e19.5)
+
+        ! end fusion cross section with WONG FORMULA
+        ! -----------------------------------------------------------------------
+
+        !------------------------------------------------------------------------
+        ! exact calculation of the fusion cross section
+
+        if (opt5 == 1) then
+            do ie = 1, nsec1, nsec2
+                e = 1.*idint(ebarr - 15.+1.*ie)
+                write (6, 1600) e, 1/e
+1600            format(/, 1x, ' ENERGY(MASS CENTRE):', F6.2, ' 1/E=', F7.4)
+                pila2 = 65.188*a0/(a1*a2*e)
+                tvar1 = 1.0d0
+                do l = 1, 219
+                    ll5 = l - 1
+                    do lr = 1, kr
+                        et1(lr) = erego(lr) + (20.75*l*a0*(l - 1)) &
+                        & /(a1*a2*rt(lr)**2)
+                    end do
+                    test = -1.
+                    jrm1 = kr - 1
+                    do jm = 2, jrm1
+                        prod = (et1(jm) - et1(jm - 1))*(et1(jm + 1) - et1(jm))
+                        conca = et1(jm) - et1(jm - 1)
+                        if ((prod <= 0.) .and. (conca >= 0.)) then
+                            test = 1.
+                            lmax = l
+                            elmax = et1(jm)
+                            hw = (et1(jm + 1) + et1(jm - 1) - 2.*et1(jm))/(1.*hh)
+                            hw = (sqrt(dabs(hw))*6.4421)/((a1*a2/a0)**.5)
+                            rol = rt(jm)
+                            jol = jm
+                        end if
+                    end do
+
+                    if (test <= 0) exit
+                    if (e < elmax) then
+                        do lex = 1, jrm1
+                            if (rt(lex) > rai(irai)) then
+                                chera = (et1(lex) - e)*(et1(lex + 1) - e)
+                                if (chera < 0.) then
+                                    l1 = lex
+                                    ra = rt(lex)
+                                    if (ra <= rol) exit
+                                    lmax = lmax - 1
+                                    goto 1619
+                                end if
+                            end if
+                        end do
+
+                        do lex = l1 + 1, jrm1
+                            cherb = (et1(lex) - e)*(et1(lex + 1) - e)
+                            if (cherb <= 0.) then
+                                rb = rt(lex)
+                                l2 = lex
+                                exit
+                            end if
+                        end do
+                        ndim = l2 - l1 + 1
+                        do lrr = 1, ndim
+                            lvl = lrr + l1 - 1
+                            evme = abs(et1(lvl) - e)
+                            et1(lrr) = sqrt(evme)
+                        end do
+                        call qsf(h, et1, zz, ndim)
+                        rkl = .219527*((a1*a2/a0)**.5)*zz(ndim)
+                        tl(l) = 1./(1.+dexp(2.*rkl))
+                        if (tl(l) <= 1.0d-8) exit
+                    else
+                        deshw = depi/hw
+                        tl(l) = 1./(1.+dexp(deshw*(elmax - e)))
+                        rb = 0.
+                        ra = 0.
+                        ndim = 0
+                        if (tl(l) <= 1.0d-8) exit
+                    end if
+                    tvar2 = tl(l)
+                    vartl = tvar2 - tvar1
+                    tvar1 = tl(l)
+                    if (vartl > 0.) exit
+                    if (opt6 == 0) then
+                        write (*, 1695) ll5, elmax, rol, jol, ra, rb, ndim, tl(l), hw
+1695                    format(' L=', I3, ' ELMAX=', F8.3, ' ROL=', F6.3, ' JOL=', &
+                                                         & I3, ' RA=', F6.3, /, ' RB=', F6.3, ' NDIM=', I3, &
+                                                         & ' TL=', F9.7, ' HW=', E11.3)
+                    end if
+
+                    l7 = ll5
+                    emaxl = elmax
+                    rrol = rol
+                    jjol = jol
+                    rra = ra
+                    rrb = rb
+                    nndim = ndim
+                    hww = hw
+                    ttl = tl(l)
+                end do
+
+                WRITE (*, 1720) l7, emaxl, rrol, jjol, rra, rrb, nndim, ttl, hww
+1720            format(' L=', I3, ' ELMAX=', F8.3, ' ROL=', F6.3, ' JOL=', I3, &
+                                                    & ' RA=', F6.3, /, '  RB=', F6.3, ' NDIM=', I3, ' TL=', F9.7, &
+                                                    & ' HW=', E11.3)
+1619            sect = 0.
+                do le = 1, lmax
+                    sect = sect + pila2*(2.*(le - 1) + 1.)*tl(le)
+                end do
+                sect = sect*10.
+                write (*, 1603) sect, lmax
+1603            format(' fusion cross section:', E12.5, ' LCR=', I3)
+            end do
+        end if
+
+        ! end exact calculation of the fusion cross section
+        !------------------------------------------------------
 
         write (*, *) "here is ok !"
 
