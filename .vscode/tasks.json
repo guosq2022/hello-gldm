@@ -1,0 +1,30 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Fortran Program", // 设置任务一：调试准备
+            "type": "shell",
+            "command": "gfortran",
+            "args": [
+                "-g",
+                "${workspaceFolder}/src/*.f90",
+                "-J${workspaceFolder}/build", // 不可有空格
+                "-I${workspaceFolder}/build",
+                "${file}", // 当前选中的主程序文件
+                "-o",
+                "${workspaceFolder}/${fileBasenameNoExtension}"
+            ],
+            "group":{
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Fortran Program", // 设置任务二：运行
+            "type": "shell",
+            "command": "${fileDirname}\\${fileBasenameNoExtension}",
+        }
+    ]
+}

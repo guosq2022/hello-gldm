@@ -6,7 +6,6 @@ module hello_gldm
 
     real(8) :: temp = 0., paray = 0.02
     integer :: nr1 = 1, nmax = 800, npas = 1, n1cor = 101
-    integer :: opt11 = 0, opt12 = 0
     integer, parameter :: opt1 = 1 ! to write s, sp, c, es ec, en, et
     integer, parameter :: opt2 = 0 ! to give energy relative to the infinity (fusion barrier).
     integer, parameter :: opt3 = 0 ! to give energy relative to the ground state (fission barrier).
@@ -16,6 +15,9 @@ module hello_gldm
     integer, parameter :: opt7 = 1 ! to take into account ellipsoidal deformation for fusion.
     integer, parameter :: opt8 = 1 ! to take into account the shell effects
     integer, parameter :: opt10 = 0 ! to calculate fusion cross section using WONG FORMULA.
+    integer, parameter :: opt11 = 0
+    integer, parameter :: opt12 = 0
+
 contains
 
     subroutine say_hello
@@ -59,7 +61,7 @@ contains
         real(8) :: r2k, rkk, r1t, r2t, rout, routth, rb, rrol
         real(8) :: uti, u
         real(8) :: vo1, vpot1, vpot2, vartl
-        real(8) :: wx, w1, w2, w3, ws1, ws2, ws3, wh, width
+        real(8) :: wx, w1, w2, w3, ws1, ws2, ws3, wh
         real(8) :: x, xuu, xli, xri, xl1, xr, xm, xcent, xl, xu, &
         & xxmoq, xmom2, xmo1, xmo2, xlmom, xlamb, xlog10
         real(8) :: y
@@ -86,10 +88,6 @@ contains
         xlmom = 10.0
         write (*, *) 'a1, z1, a2, z2, qexp:', a1, z1, a2, z2, qexp
 
-        ! 计算t12
-        t12 = 123.
-        t12_out = t12
-        write (*, *) 't12_out:', t12_out
 
         ! old main gldm
         a0 = a1 + a2
@@ -807,6 +805,9 @@ contains
         xlamb = freq*pp12
         t12 = log(2.0d0)/xlamb
         xlog10 = log10(t12)
+
+        ! output
+        t12_out = t12
 
         write (*, "('action = ', f14.6, /, 't1/2 = ', e14.6, ' s', /, &
         & 'log10(t12) = ', f14.6, /, 'pp12 = ', e14.6, /)") &
