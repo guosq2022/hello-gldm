@@ -718,8 +718,9 @@ contains
         end if
 
 774     format(/, ' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER',/)
-874     format(/, ' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER',/)
-410     format(2(' R', f10.3, ' E', f10.3, ' der', f10.5))
+874     format(' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER', /, &
+& t10, 'r', t20, 'e', t28, 'der')
+410     format( f10.4, f10.4, f10.4)
 
         ! ----------------------------------------------------------
         ! half-life determination
