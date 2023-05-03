@@ -9,7 +9,7 @@ module hello_gldm
     integer, parameter :: opt1 = 1 ! to write s, sp, c, es ec, en, et
     integer, parameter :: opt2 = 0 ! to give energy relative to the infinity (fusion barrier).
     integer, parameter :: opt3 = 0 ! to give energy relative to the ground state (fission barrier).
-    integer, parameter :: opt4 = 1 ! to determine the radii from the total system, otherwise, from each nucleus.
+    integer, parameter :: opt4 = 0 ! to determine the radii from the total system, otherwise, from each nucleus.
     integer, parameter :: opt5 = 0 ! to calculate fusion cross sections using GLDM.
     integer, parameter :: opt6 = 1 ! to give ra, rb, tl, hw, elmax (characteristics of fusion barrier).
     integer, parameter :: opt7 = 1 ! to take into account ellipsoidal deformation for fusion.
@@ -41,10 +41,11 @@ contains
         & concd, conca, chera, cherb
         real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d, &
         & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent, deshw, &
-        & drcont_def, decont_def, dr_def, de_def, dise_ref
+        & drcont_def, decont_def, dr_def, de_def, dise_ref, disc1, disc2
         real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es, &
         & ecart, ec, en, e, etota, erot, ecer, ebarr, ebafi, econt, eref, eee, &
-        & elmax, evme, emaxl, econt_def, eninf_def
+        & elmax, evme, emaxl, econt_def, eninf_def, eshell0, eshell1, eshell2, &
+        & epair1, epair2, emic12, etinf
         real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1, freq
         real(8) :: h, hh, hv, hy, h1, h2, h1ph2, hw, hww
         real(8) :: llll
@@ -57,9 +58,8 @@ contains
         & rayo5, rbarr, redmas, rol, rkl, rra, rrb, ra, r1_def, r2_def, &
         & rcont, rcont_def
         real(8) :: sep, s, s2, s4, sprim, sp2, sp4, sqzv, sqcp, sqc, &
-        & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x, shell0,   &
-        & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6, step, secte, sect, &
-        & shell1, shell2
+        & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x,    &
+        & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6, step, secte, sect
         real(8) :: t12, tcrit, tol, tolf, tetax, tzhw, tvar1, test, tvar2, ttl, &
         & th1, th2
         real(8) :: r2k, rkk, r1t, r2t, rout, routth, rb, rrol
@@ -89,8 +89,8 @@ contains
         z1 = frag_z1
         a1 = frag_a1
         qexp = qexp_in
-        llll = 10.0
-        xlmom = 10.0
+        llll = 0.0
+        xlmom = 0.0
         write (*, *) 'a1, z1, a2, z2, qexp:', a1, z1, a2, z2, qexp
 
 
@@ -179,6 +179,11 @@ contains
         eninf = ess + ecinf + evoinf
         eninf_def = eninf + 1.
         qreac = eo - eninf
+
+        ! modified by guo
+        etinf = ess + ecinf + evoinf
+        ! end modify
+
         !  qexp becomes qreac of the LDM if qexp=0. in the file fusfis.dat
         IF (qexp == 0.0D0) qexp = qreac
         difes = ess - eso*(r1*r1 + r2*r2)/rayo2
@@ -193,8 +198,14 @@ contains
 
         ! TODO
         amo = 0.286*1.2249
-        shell0 = 0.0
-        shell0 = shellempirical(int(a0), int(z0))
+        eshell0 = 0.0
+        eshell1 = 0.0
+        eshell2 = 0.0
+        epair1 = 0.0
+        epair2 = 0.0
+        !eshell0 = shellempirical(int(a0), int(z0))
+        !eshell1 = shellempirical(int(a1), int(z1))
+        !eshell2 = shellempirical(int(a2), int(z2))
 
         ph1 = 2.*r1*r1
         ph2 = 4.*r1*r1*r1*r1
@@ -416,7 +427,7 @@ contains
                 ecart = (0.5*(devr1 + devr2))/(rayon*rayon*es/eso)
                 ecart = ecart/(amo*amo)
                 amort = (1.0 - 3.1*ecart)*exp(-ecart)
-                couch = shell0*amort
+                couch = eshell0*amort
 
 
                 ! end the damping of shell and pairing for one-body shapes
@@ -556,7 +567,16 @@ contains
                 etota = etota + erot + couch
                 etot(j) = etota
                 ! end store the total energy
-                write(7,*) rai(j), couch,etot(j)-(etot(j)-couch),etota
+
+                ! modified by guo
+                emic12 = eshell1 + eshell2 + epair1 + epair2
+                disc1 = disco * (rai(j) - rai(1))/(r1pr2 - rai(1))
+                disc2 = emic12 / (1. + exp(-(rai(j) - r1pr2)/2.))
+                etota = ec + es + evolsp + couch + disc1 + disc2
+                etot(j) = etota - etinf
+                ! end modified
+                
+                write(7,*) rai(j), couch,disc1 + disc2,etota
 
                 if (abs(a1 - a2) < 0.01) then
                     xxmoq = argsh(sqrt((1.0 - s2)/s2))/sqrt(1.0 - s2)
@@ -577,7 +597,7 @@ contains
             ! -------------------------------------------------------------
             ! begin two-body shapes
 
-            if (j > n1cor) then ! begin calculation for two-body shapes
+            if (j >= n1cor) then ! begin calculation for two-body shapes
                 s = 0.0
                 couch = 0.0
                 sprim = 0.0
@@ -626,6 +646,15 @@ contains
                 erot = xlmom*(xlmom + 1.)*51.8325/(a0*rayo2)/xmom2
                 etota = ec + en - ecinf + erot + couch !- (qexp - qreac)
                 etot(j) = etota
+
+                ! modified by guo
+                disc2 = emic12 / (1. + exp(-(rai(j) - r1pr2)/2.))
+                etota = ec + es + evolsp + couch + disc1 + disc2
+                
+                etot(j) = etota - etinf
+                ! end modified
+
+                write(7,*) rai(j), couch,disc1 + disc2,etota
 
                 quadr = 2.094395*rcent*rcent/rayo2
                 q2 = 0.37797632*rayo2 + 0.25*rcent*rcent
@@ -729,7 +758,7 @@ contains
 774     format(/, ' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER',/)
 874     format(' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER', /, &
 & t10, 'r', t20, 'e', t28, 'der')
-410     format( f10.4, f10.4, f10.4)
+410     format( f10.2, f10.2, f10.2)
 
         ! ----------------------------------------------------------
         ! half-life determination
@@ -891,7 +920,7 @@ contains
 775     format(/, ' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER',/)
 875     format(' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER', /, &
 & t10, 'r', t20, 'e', t28, 'der')
-415     format( f10.4, f10.4, f10.4)
+415     format( f10.2, f10.2, f10.2)
         ! ============================================================================
 
         ! ----------------------------------------------------------------------------

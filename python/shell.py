@@ -26,7 +26,8 @@ ax1.plot(x1, y2, color='tab:blue', label='energy2')
 ax1.plot(x1, y3, color='tab:green', label='energy3')
 #ax1.tick_params(axis='y', labelcolor=color)
 
-
+plt.ylim(-1600,-1550)
+plt.xlim(5,15)
 
 #使用ax1.twinx()来创建一个与ax1共享x轴但具有不同y轴的轴ax2
 #ax2 = ax1.twinx()
