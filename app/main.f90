@@ -7,7 +7,7 @@ program main
   call say_hello()
 
   a0 = 212.
-  z0 = 86. !86. !84.
+  z0 = 84. !86. !84.
   a2 = 4.
   z2 = 2.
   a1 = a0 - a2
