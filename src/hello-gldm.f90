@@ -33,7 +33,8 @@ contains
         real(8) :: a0, a1, a2, as, avol, alpha, a1unt, a1det, a2unt, a2det, &
         & aunti, adeti, amo, aco, ac2, ac4, ac6, arc, amort, akr, ak2, aak, &
         & a, axxo, actn, auxse
-        real(8) :: beta, beta1, beta2, beta3, bdif, bs, bc, b, bt12, bt22
+        real(8) :: beta, beta1, beta2, beta3, bdif, bs, bc, b, &
+        & bt21, bt22
         real(8) :: coefq, cosep, coec, c, c2, c3, c4, c5, c7, c8, c9, &
         & c2s2, cp2, cp, cp3, cp4, cpac, c2ac, csd, cpt12, cpzv, czv, &
         & cp4z, c4z, cos2x, couch, coooo, co2oo, cosoi, cos2, css, ccc, &
@@ -41,12 +42,14 @@ contains
         & concd, conca, chera, cherb
         real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d, &
         & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent, deshw, &
-        & drcont_def, decont_def, dr_def, de_def, dise_ref, disc1, disc2
+        & drcont_def, decont_def, dr_def, de_def, dise_ref, &
+        & damp1, damp2, difes2, difev2, difec2, disco2, difemac, difemic, &
+        & difepro
         real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es, &
-        & ecart, ec, en, e, etota, erot, ecer, ebarr, ebafi, econt, eref, eee, &
+        & ecart, ec, en, e, etota, erot, ebarr, ebafi, econt, eref, eee, &
         & elmax, evme, emaxl, econt_def, eninf_def, eshell0, eshell1, eshell2, &
-        & epair1, epair2, emic12, etinf
-        real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1, freq
+        & epair1, epair2, emic12, einf2
+        real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1, freq, fbet_tht 
         real(8) :: h, hh, hv, hy, h1, h2, h1ph2, hw, hww
         real(8) :: llll
         real(8) :: ooo, oi, ooooi
@@ -180,9 +183,6 @@ contains
         eninf_def = eninf + 1.
         qreac = eo - eninf
 
-        ! modified by guo
-        etinf = ess + ecinf + evoinf
-        ! end modify
 
         !  qexp becomes qreac of the LDM if qexp=0. in the file fusfis.dat
         IF (qexp == 0.0D0) qexp = qreac
@@ -193,19 +193,69 @@ contains
         ! disco=discontinuity at the contact point: two body minus one body energies
         disco = difes + difec + difvol
 
-        z1sa1 = z1/a1
-        z2sa2 = z2/a2
 
-        ! TODO
-        amo = 0.286*1.2249
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        ! modified by guo
         eshell0 = 0.0
         eshell1 = 0.0
         eshell2 = 0.0
         epair1 = 0.0
         epair2 = 0.0
+
         !eshell0 = shellempirical(int(a0), int(z0))
-        !eshell1 = shellempirical(int(a1), int(z1))
-        !eshell2 = shellempirical(int(a2), int(z2))
+        eshell1 = shellempirical(int(a1), int(z1))
+        eshell2 = shellempirical(int(a2), int(z2))
+
+
+        damp1 = 0.5
+        damp2 = 0.5
+        emic12 = eshell1 + eshell2 + epair1 + epair2
+
+        ! sph
+        ! es00  ! sph for a0
+        ! es01  ! sph for a1
+        ! es02  ! sph for a2
+        ! ev00
+        ! ev01
+        ! ev02
+        ! ec00 ! 自能
+        ! ec01
+        ! ec02
+        ! es01p2, ev01p2, ec01p2
+        ! eini = es00 + ev00 + ec00
+        ! einf = es01p2 + ev01p2 + ec01p2
+
+        ! def
+        ! es0   ! def for a0
+        ! es1   ! def for a1
+        ! es2   ! def for a2
+        ! ev0
+        ! ev1
+        ! ev2
+        ! ec0
+        ! ec1
+        ! ec2
+        ! es1p2, ev1p2, ec1p2
+        ! eini2 = es0 + ev0 + ec0 + emic0  !可先循环找到极小值点，返回各自能量
+        ! einf2 = es1p2 + ev1p2 + ec1p2 + emic1p2
+
+        ! dif at contact ! 用于接触点过度修正
+        ! difes1, difes2, difes1p2
+        ! difev1, difev2, difev1p2
+        ! difec1, difec2, difec1p2
+
+
+        einf2 = ess + ecinf + evoinf + emic12
+        !einf2 = (ess+difes2) + (ecinf+difec21) + (evoinf+difev2) + emic12
+        ! end modify
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        z1sa1 = z1/a1
+        z2sa2 = z2/a2
+
+        ! TODO
+        amo = 0.286*1.2249
+
 
         ph1 = 2.*r1*r1
         ph2 = 4.*r1*r1*r1*r1
@@ -568,15 +618,24 @@ contains
                 etot(j) = etota
                 ! end store the total energy
 
-                ! modified by guo
-                emic12 = eshell1 + eshell2 + epair1 + epair2
-                disc1 = disco * (rai(j) - rai(1))/(r1pr2 - rai(1))
-                disc2 = emic12 / (1. + exp(-(rai(j) - r1pr2)/2.))
-                etota = ec + es + evolsp + couch + disc1 + disc2
-                etot(j) = etota - etinf
-                ! end modified
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                ! modified by guo 2
+                difes2 = 0.0 ! deformation energy for es
+                difev2 = 0.0 ! deformation energy for ev
+                difec2 = 0.0 ! deformation energy for ec
+                disco2 = disco + difes2 + difev2 + difec2
+
+                fbet_tht = 1.  ! deformation and angular for proximty
                 
-                write(7,*) rai(j), couch,disc1 + disc2,etota
+                difemac = disco2 * (rai(j) - rai(1))/(r1pr2 - rai(1))
+                difemic = emic12 / (1. + exp(-(rai(j) - r1pr2)/damp1))
+                difepro = en * (fbet_tht - 1.)
+                etota = ec + es + evolsp + en + difemac + difemic + difepro
+                etot(j) = etota - einf2
+                ! end modified
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                
+                write(7,*) rai(j), etota, etota, etota
 
                 if (abs(a1 - a2) < 0.01) then
                     xxmoq = argsh(sqrt((1.0 - s2)/s2))/sqrt(1.0 - s2)
@@ -647,14 +706,20 @@ contains
                 etota = ec + en - ecinf + erot + couch !- (qexp - qreac)
                 etot(j) = etota
 
-                ! modified by guo
-                disc2 = emic12 / (1. + exp(-(rai(j) - r1pr2)/2.))
-                etota = ec + es + evolsp + couch + disc1 + disc2
-                
-                etot(j) = etota - etinf
-                ! end modified
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                ! modified by guo 3
+                fbet_tht = 1.  ! deformation and angular for proximty
 
-                write(7,*) rai(j), couch,disc1 + disc2,etota
+                difemac = disco2
+                difemic = emic12 / (1. + exp(-(rai(j) - r1pr2)/damp2))
+                difepro = en * (fbet_tht - 1.)
+                etota = ec + es + evolsp + en + difemac + difemic + difepro
+                
+                etot(j) = etota - einf2
+                ! end modified
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+                write(7,*) rai(j), etota, etota, etota
 
                 quadr = 2.094395*rcent*rcent/rayo2
                 q2 = 0.37797632*rayo2 + 0.25*rcent*rcent
@@ -739,25 +804,24 @@ contains
         erefu(1:krm1) = erego(1:krm1) !+ (qexp - qreac)
 
         ! print fusion and fission curve
-        if (opt2 /= 0) then
+        !if (opt2 /= 0) then
             open (11, file='fusbar.dat', status='replace')
             write (*, 774)
             write (*, 410) (rt(jr), erefu(jr), deri(jr), jr=2, krm1)
             write (11, 774)
             write (11, 410) (rt(jr), erefu(jr), deri(jr), jr=2, krm1)
             close (11)
-        else
+        !else
             open (12, file='fisbar.dat', status='replace')
             write (*, 874)
             write (*, 410) (rt(jr), erefi(jr), deri(jr), jr=2, krm1)
             write (12, 874)
             write (12, 410) (rt(jr), erefi(jr), deri(jr), jr=2, krm1)
             close (12)
-        end if
+        !end if
 
-774     format(/, ' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER',/)
-874     format(' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER', /, &
-& t10, 'r', t20, 'e', t28, 'der')
+774     format(' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER (R, E, der)')
+874     format(' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER (R, E, der)')
 410     format( f10.2, f10.2, f10.2)
 
         ! ----------------------------------------------------------
@@ -860,9 +924,9 @@ contains
         ! radius at contact point
         th1 = 0.0
         th2 = 0.0
-        bt12 = 0.2
+        bt21 = 0.2
         bt22 = 0.0
-        r1_def = r1 * (1. + bt12 * yy(2, cos(th1)))
+        r1_def = r1 * (1. + bt21 * yy(2, cos(th1)))
         r2_def = r2 * (1. + bt22 * yy(2, cos(th2)))
         rcont = r1pr2
         rcont_def = r1_def + r2_def
