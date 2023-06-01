@@ -16,54 +16,55 @@ module hello_gldm
     integer, parameter :: opt8 = 1 ! to take into account the shell effects
     integer, parameter :: opt10 = 0 ! to calculate fusion cross section using WONG FORMULA.
     integer, parameter :: opt11 = 0
-    integer, parameter :: opt12 = 0 ! to calculate half-lives for the isomeric state
+    integer, parameter :: opt12 = 0 ! to calculate half-lives for the g.s. (=0) or isomeric state(=1)
 
 contains
 
+!   test welcome!
     subroutine say_hello
+
         print *, "Hello, hello-gldm!"
-        print *, " test github working!"
+
     end subroutine say_hello
 
-    ! call gldm
+! call gldm
     subroutine gldm(frag_a1, frag_z1, frag_a2, frag_z2, qexp_in, t12_out)
         real(8), intent(in) :: frag_a1, frag_z1, frag_a2, frag_z2, qexp_in
         real(8), intent(out) :: t12_out
-
-        real(8) :: a0, a1, a2, as, avol, alpha, a1unt, a1det, a2unt, a2det, &
-        & aunti, adeti, amo, aco, ac2, ac4, ac6, arc, amort, akr, ak2, aak, &
+        real(8) :: a0, a1, a2, as, avol, alpha, a1unt, a1det, a2unt, a2det,         &
+        & aunti, adeti, amo, aco, ac2, ac4, ac6, arc, amort, akr, ak2, aak,         &
         & a, axxo, actn, auxse
-        real(8) :: beta, beta1, beta2, beta3, bdif, bs, bc, b, &
+        real(8) :: beta, beta1, beta2, beta3, bdif, bs, bc, b,                      &
         & bt21, bt22
-        real(8) :: coefq, cosep, coec, c, c2, c3, c4, c5, c7, c8, c9, &
-        & c2s2, cp2, cp, cp3, cp4, cpac, c2ac, csd, cpt12, cpzv, czv, &
-        & cp4z, c4z, cos2x, couch, coooo, co2oo, cosoi, cos2, css, ccc, &
-        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2, croi, coeff1, &
+        real(8) :: cosep, coec, c, c2, c3, c4, c5, c7, c8, c9,                      &
+        & c2s2, cp2, cp, cp3, cp4, cpac, c2ac, csd, cpt12, cpzv, czv,               &
+        & cp4z, c4z, cos2x, couch, coooo, co2oo, cosoi, cos2, css, ccc,             &
+        & cpc, coooi, cor, cor1, cor2, coefk, coefd, cefd2, croi, coeff1,           &
         & concd, conca, chera, cherb
-        real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d, &
-        & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent, deshw, &
-        & drcont_def, decont_def, dr_def, de_def, dise_ref, &
-        & damp1, damp2, difes2, difev2, difec2, disco2, difemac, difemic, &
+        real(8) :: depi, difvol, difes, difec, disco, denbc, d5, d2, d,             &
+        & dx, devr1, devr2, de2, deooi, d9, d1, dvj, di4m1, dpent, deshw,           &
+        & drcont_def, decont_def, dr_def, de_def, dise_ref,                         &
+        & damp1, damp2, difes2, difev2, difec2, disco2, difemac, difemic,           &
         & difepro
-        real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es, &
-        & ecart, ec, en, e, etota, erot, ebarr, ebafi, econt, eref, eee, &
-        & elmax, evme, emaxl, econt_def, eninf_def, eshell0, eshell1, eshell2, &
+        real(8) :: eso, ess, eco, ecinf, evoinf, evolsp, eo, eninf, eps, es,        &
+        & ecart, ec, en, e, etota, erot, ebarr, ebafi, econt, eref, eee,            &
+        & elmax, evme, emaxl, econt_def, eninf_def, eshell0, eshell1, eshell2,      &
         & epair1, epair2, emic12, einf2
-        real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1, freq, fbet_tht 
+        real(8) :: fs, f, fl, fr, fm, fm1, fo, fp1, freq, fbet_tht
         real(8) :: h, hh, hv, hy, h1, h2, h1ph2, hw, hww
         real(8) :: llll
         real(8) :: ooo, oi, ooooi
-        real(8) :: pas, ph1, ph2, ph3, phs1, phs2, phs3, pisur2, pasin, &
+        real(8) :: pas, ph1, ph2, ph3, phs1, phs2, phs3, pisur2, pasin,             &
         & penta, pentb, paeb, pp12, prodd, pila2, prod
         real(8) :: qexp, qvalu, qupi1, qupi2, qupig, qreac, quadr, q2
-        real(8) :: r1, r2, ro, rkas, raya1, raya2, rfiss, rayon, rayo2, rayo3, &
-        & r1pr2, rac, rat12, rcent, r13, r23, r2x, rrx, rrr, rcc, r2j, rjj, &
-        & rayo5, rbarr, redmas, rol, rkl, rra, rrb, ra, r1_def, r2_def, &
+        real(8) :: r1, r2, ro, rkas, raya1, raya2, rfiss, rayon, rayo2, rayo3,      &
+        & r1pr2, rac, rat12, rcent, r13, r23, r2x, rrx, rrr, rcc, r2j, rjj,         &
+        & rayo5, rbarr, redmas, rol, rkl, rra, rrb, ra, r1_def, r2_def,             &
         & rcont, rcont_def
-        real(8) :: sep, s, s2, s4, sprim, sp2, sp4, sqzv, sqcp, sqc, &
-        & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x,    &
+        real(8) :: sep, s, s2, s4, sprim, sp2, sp4, sqzv, sqcp, sqc,                &
+        & sq1, sq2, sqp1, sqp2, ssur1, ssup1, sinox, sin2x,                         &
         & s2m1, sp2m1, siooo, sinoi, sin2, siooi, s6, step, secte, sect
-        real(8) :: t12, tcrit, tol, tolf, tetax, tzhw, tvar1, test, tvar2, ttl, &
+        real(8) :: t12, tcrit, tol, tolf, tetax, tzhw, tvar1, test, tvar2, ttl,     &
         & th1, th2
         real(8) :: r2k, rkk, r1t, r2t, rout, routth, rb, rrol
         real(8) :: uti, u
@@ -72,35 +73,35 @@ contains
         real(8) :: x, xuu, xli, xri, xl1, xr, xm, xcent, xl, xu, &
         & xxmoq, xmom2, xmo1, xmo2, xlmom, xlamb, xlog10
         real(8) :: y
-        real(8) :: z0, z1, z2, z1i, z1i2, z2i, z2i2, zi, zii, z1z2, z2sua, z1sa1, &
+        real(8) :: z0, z1, z2, z1i, z1i2, z2i, z2i2, zi, zii, z1z2, z2sua, z1sa1,   &
         & z2sa2, z4, za, zv, zv2, zv4, zz1, zz2, zhw
         real(8), parameter :: pi = 3.1415926535
-        real(8), dimension(2000) :: rai, etot, rt, erego, erefi, erefu, deri, &
+        real(8), dimension(2000) :: rai, etot, rt, erego, erefi, erefu, deri,       &
         & et1, zz, tl, rt_def, erego_def, erefi_def, erefu_def, deri_def
         real(8), dimension(100) :: rintx, devr, y1, vo, voo, bcc
         integer, dimension(10) :: nmin12
         integer :: nsec1, nsec2, nh1, nh2, nr1p1, nm, nmax1, i, j, k, iend, ier, m, &
-        & npasin, intrx, jj, nema, nem, jr, ir, kr, jrt, krm1, jd, &
-        & ncont, nminim, n111, n222, ij, nabsmi, ji, ikk, nturn, ii, l, ll, jm, ijk, &
-        & ie, ll5, lr, jrm1, lmax, jol, lex, irai, l2, ndim, lrr, lvl, l7, jjol, &
+        & npasin, intrx, jj, nema, nem, jr, ir, kr, jrt, krm1, jd, ncont,           &
+        & nminim, n111, n222, ij, nabsmi, ji, ikk, nturn, ii, l, ll, jm, ijk,       &
+        & ie, ll5, lr, jrm1, lmax, jol, lex, irai, l2, ndim, lrr, lvl, l7, jjol,    &
         & nndim, le, l1
 
         open (10, file='result.dat', status='replace')
 
+        ! mother and son
         a2 = frag_a2
         z2 = frag_z2
         z1 = frag_z1
         a1 = frag_a1
+        a0 = a1 + a2
+        z0 = z1 + z2
         qexp = qexp_in
         llll = 0.0
         xlmom = 0.0
+
         write (*, *) 'a1, z1, a2, z2, qexp:', a1, z1, a2, z2, qexp
 
-
-        ! old main gldm
-        a0 = a1 + a2
-        z0 = z1 + z2
-
+        ! old gldm source
         tcrit = 17.
         qvalu = 0.0
 
@@ -137,6 +138,7 @@ contains
         zii = zi*zi
         raya1 = 1.28*a1unt - 0.76 + (0.8/a1unt)
         raya2 = 1.28*a2unt - 0.76 + (0.8/a2unt)
+
         if (opt4 == 0) then
             beta1 = raya2/raya1
             beta3 = beta1*beta1*beta1
@@ -152,8 +154,6 @@ contains
         end if
         rayo2 = rayon*rayon
 
-        ! Coefficient to express the quadrupole moment in Barns
-        coefq = 0.75*rayo2/3.1415926
         rfiss = 1.28*aunti - 0.76 + (0.8/aunti)
         rfiss = rfiss*(1.+0.0007*temp*temp)
         rayo3 = rayo2*rayon
@@ -170,6 +170,7 @@ contains
         bdif = 0.99*(1.+0.009*temp*temp)
         cosep = .5*bdif*bdif*((r1 + r2)/(r1*r2))
         sep = .5*bdif*bdif*((r1 + r2)/(r1*r2))
+
         eso = as*(1.-rkas*zii)*adeti
         ess = as*a1det*(1.-rkas*z1i2) + as*a2det*(1.-rkas*z2i2)
         eco = (.864*z0*z0)/rayon
@@ -178,34 +179,30 @@ contains
         evoinf = avol*((1.-1.80*z1i2)*a1 + (1.-1.80*z2i2)*a2)
         evolsp = avol*(1.-1.80*zii)*a0
         difvol = evoinf - evolsp
+
         eo = eco + eso + evolsp
         eninf = ess + ecinf + evoinf
         eninf_def = eninf + 1.
         qreac = eo - eninf
 
-
         !  qexp becomes qreac of the LDM if qexp=0. in the file fusfis.dat
         IF (qexp == 0.0D0) qexp = qreac
         difes = ess - eso*(r1*r1 + r2*r2)/rayo2
         difec = 0.864*(z1*z1/r1 + z2*z2/r2) + 1.44*z1z2/r1pr2 - (z1 + z2) &
-        &        *(z1 + z2)*(.864*(r1**5.+r2**5.) + 1.44*((r1*r2)**3.)/r1pr2) &
-        &        /(rayo3*rayo3)
+        & * (z1 + z2)*(.864*(r1**5.+r2**5.) + 1.44*((r1*r2)**3.)/r1pr2) /(rayo3*rayo3)
         ! disco=discontinuity at the contact point: two body minus one body energies
         disco = difes + difec + difvol
 
-
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        ! modified by guo
         eshell0 = 0.0
         eshell1 = 0.0
         eshell2 = 0.0
         epair1 = 0.0
         epair2 = 0.0
 
-        !eshell0 = shellempirical(int(a0), int(z0))
+        eshell0 = shellempirical(int(a0), int(z0))
         eshell1 = shellempirical(int(a1), int(z1))
         eshell2 = shellempirical(int(a2), int(z2))
-
 
         damp1 = 0.5
         damp2 = 0.5
@@ -244,7 +241,6 @@ contains
         ! difev1, difev2, difev1p2
         ! difec1, difec2, difec1p2
 
-
         einf2 = ess + ecinf + evoinf + emic12
         !einf2 = (ess+difes2) + (ecinf+difec21) + (evoinf+difev2) + emic12
         ! end modify
@@ -255,7 +251,6 @@ contains
 
         ! TODO
         amo = 0.286*1.2249
-
 
         ph1 = 2.*r1*r1
         ph2 = 4.*r1*r1*r1*r1
@@ -479,7 +474,6 @@ contains
                 amort = (1.0 - 3.1*ecart)*exp(-ecart)
                 couch = eshell0*amort
 
-
                 ! end the damping of shell and pairing for one-body shapes
                 !----------------------------------------------------------
 
@@ -586,6 +580,7 @@ contains
                 etota = disco*(rai(j) - rai(1))/(r1pr2 - rai(1))
                 etota = etota + (qexp - qreac)*(-rai(j) + r1pr2)/(r1pr2 - rai(1))
                 etota = etota + en + ec + es + evolsp - (ess + ecinf + evoinf) !- (qexp - qreac)
+                !etot(j) = etota
                 ! end taking into account the discontinuity and qexp at the contact point
                 ! -------------------------------------------------------------
 
@@ -614,7 +609,7 @@ contains
                 ! ----------------------------------------------------------------
 
                 ! store the total energy
-                etota = etota + erot + couch
+                etota = etota + couch
                 etot(j) = etota
                 ! end store the total energy
 
@@ -626,16 +621,14 @@ contains
                 disco2 = disco + difes2 + difev2 + difec2
 
                 fbet_tht = 1.  ! deformation and angular for proximty
-                
-                difemac = disco2 * (rai(j) - rai(1))/(r1pr2 - rai(1))
-                difemic = emic12 / (1. + exp(-(rai(j) - r1pr2)/damp1))
-                difepro = en * (fbet_tht - 1.)
+
+                difemac = disco2*(rai(j) - rai(1))/(r1pr2 - rai(1))
+                difemic = emic12/(1.+exp(-(rai(j) - r1pr2)/damp1))
+                difepro = en*(fbet_tht - 1.)
                 etota = ec + es + evolsp + en + difemac + difemic + difepro
-                etot(j) = etota - einf2
+                !etot(j) = etota - einf2
                 ! end modified
                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                
-                write(7,*) rai(j), etota, etota, etota
 
                 if (abs(a1 - a2) < 0.01) then
                     xxmoq = argsh(sqrt((1.0 - s2)/s2))/sqrt(1.0 - s2)
@@ -702,7 +695,8 @@ contains
                     xmom2 = xmom2/(0.4*rayo2*(r13 + r23))
                 end if
 
-                erot = xlmom*(xlmom + 1.)*51.8325/(a0*rayo2)/xmom2
+                !erot = xlmom*(xlmom + 1.)*51.8325/(a0*rayo2)/xmom2
+                erot = 0.0
                 etota = ec + en - ecinf + erot + couch !- (qexp - qreac)
                 etot(j) = etota
 
@@ -711,15 +705,14 @@ contains
                 fbet_tht = 1.  ! deformation and angular for proximty
 
                 difemac = disco2
-                difemic = emic12 / (1. + exp(-(rai(j) - r1pr2)/damp2))
-                difepro = en * (fbet_tht - 1.)
+                difemic = emic12/(1.+exp(-(rai(j) - r1pr2)/damp2))
+                difepro = en*(fbet_tht - 1.)
                 etota = ec + es + evolsp + en + difemac + difemic + difepro
-                
-                etot(j) = etota - einf2
+
+                !etot(j) = etota - einf2
                 ! end modified
                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-                write(7,*) rai(j), etota, etota, etota
 
                 quadr = 2.094395*rcent*rcent/rayo2
                 q2 = 0.37797632*rayo2 + 0.25*rcent*rcent
@@ -799,30 +792,31 @@ contains
             deri(jd) = (erego(jd + 1) - erego(jd - 1))/(2.0*h)
         end do
 
+
         ! tabulate the fusion and fission curve
         erefi(1:krm1) = erego(1:krm1) - qexp !- qreac
         erefu(1:krm1) = erego(1:krm1) !+ (qexp - qreac)
 
         ! print fusion and fission curve
         !if (opt2 /= 0) then
-            open (11, file='fusbar.dat', status='replace')
-            write (*, 774)
-            write (*, 410) (rt(jr), erefu(jr), deri(jr), jr=2, krm1)
-            write (11, 774)
-            write (11, 410) (rt(jr), erefu(jr), deri(jr), jr=2, krm1)
-            close (11)
+        open (11, file='fusbar.dat', status='replace')
+        write (*, 774)
+        write (*, 410) (rt(jr), erefu(jr),  jr=1, krm1)
+        write (11, 774)
+        write (11, 410) (rt(jr), erefu(jr), jr=1, krm1)
+        close (11)
         !else
-            open (12, file='fisbar.dat', status='replace')
-            write (*, 874)
-            write (*, 410) (rt(jr), erefi(jr), deri(jr), jr=2, krm1)
-            write (12, 874)
-            write (12, 410) (rt(jr), erefi(jr), deri(jr), jr=2, krm1)
-            close (12)
+        open (12, file='fisbar.dat', status='replace')
+        write (*, 874)
+        write (*, 410) (rt(jr), erefi(jr),  jr=1, krm1)
+        write (12, 874)
+        write (12, 410) (rt(jr), erefi(jr), jr=1, krm1)
+        close (12)
         !end if
 
 774     format(' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER (R, E, der)')
 874     format(' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER (R, E, der)')
-410     format( f10.2, f10.2, f10.2)
+410     format(f10.2, f10.2)
 
         ! ----------------------------------------------------------
         ! half-life determination
@@ -844,6 +838,7 @@ contains
                 nminim = nminim + 1
                 nmin12(nminim) = 1
             end if
+
             do ij = 2, n111
                 if (erefi(ij - 1) > erefi(ij) .and. erefi(ij) < erefi(ij + 1) &
                 & .and. rt(ij) < r1pr2) then
@@ -851,6 +846,7 @@ contains
                     nmin12(nminim) = ij
                 end if
             end do
+
             if (nminim > 0) then
                 nabsmi = nmin12(1)
                 do ji = 1, nminim
@@ -876,6 +872,14 @@ contains
 
         nturn = 0
         eref = 0.0
+        !相对于基态位置
+        !eref = erefi(nabsmi)
+
+        ! erefi(:)修正
+        do i = nabsmi, ncont, 1
+        erefi(i) = erefi(i) + 0.0000 * (i - 1)
+        enddo
+
         do ii = nabsmi, n222 - 1
             if (erefi(ii) >= eref .and. erefi(ii + 1) <= eref .and. rt(ii) > r1pr2) then
                 nturn = ii
@@ -917,7 +921,6 @@ contains
         & 'log10(t12) = ', f14.6, /, 'pp12 = ', e14.6, /)") &
         & actn, t12, xlog10, pp12
 
-
         ! ============================================================================
         ! take into account deformation
 
@@ -926,8 +929,8 @@ contains
         th2 = 0.0
         bt21 = 0.2
         bt22 = 0.0
-        r1_def = r1 * (1. + bt21 * yy(2, cos(th1)))
-        r2_def = r2 * (1. + bt22 * yy(2, cos(th2)))
+        r1_def = r1*(1.+bt21*yy(2, cos(th1)))
+        r2_def = r2*(1.+bt22*yy(2, cos(th2)))
         rcont = r1pr2
         rcont_def = r1_def + r2_def
         drcont_def = rcont_def - rcont
@@ -940,21 +943,21 @@ contains
 
         ! restore after g.s. config
         do j = 1, krm1
-            if(j < nabsmi) then
+            if (j < nabsmi) then
                 dr_def = 0.
                 de_def = 0.
             else
-                if(j > ncont) then
+                if (j > ncont) then
                     dr_def = drcont_def
                     de_def = decont_def
                 else
-                    dr_def = drcont_def * (j - nabsmi) / (ncont - nabsmi)
-                    de_def = decont_def * (j - nabsmi) / (ncont - nabsmi)
-                endif
-            endif
-        rt_def(j) = rt(j) + dr_def
-        erego_def(j) = erego(j) + de_def
-        enddo
+                    dr_def = drcont_def*(j - nabsmi)/(ncont - nabsmi)
+                    de_def = decont_def*(j - nabsmi)/(ncont - nabsmi)
+                end if
+            end if
+            rt_def(j) = rt(j) + dr_def
+            erego_def(j) = erego(j) + de_def
+        end do
 
         ! tabulate the fusion and fission curve
         erefi_def(1:krm1) = erego_def(1:krm1) + dise_ref - qexp !- qreac
@@ -964,7 +967,7 @@ contains
             deri_def(jd) = (erego_def(jd + 1) - erego_def(jd - 1))/(2.0*h)
         end do
 
-         ! print fusion and fission curve for deformation
+        ! print fusion and fission curve for deformation
         if (opt2 /= 0) then
             open (13, file='fusbar_def.dat', status='replace')
             !write (*, 775)
@@ -983,8 +986,8 @@ contains
 
 775     format(/, ' ENERGY RELATIVELY TO THE INFINITY: FUSION BARRIER',/)
 875     format(' ENERGY RELATIVELY TO THE GROUND STATE: FISSION BARRIER', /, &
-& t10, 'r', t20, 'e', t28, 'der')
-415     format( f10.2, f10.2, f10.2)
+    & t10, 'r', t20, 'e', t28, 'der')
+415     format(f10.2, f10.2, f10.2)
         ! ============================================================================
 
         ! ----------------------------------------------------------------------------
@@ -1016,7 +1019,7 @@ contains
         end if
 
 1753    format(/, ' cross section (WONG FORMULA valid for medium E):', &
-                 & ' HW(MeV)=', f6.4)
+                    & ' HW(MeV)=', f6.4)
 5768    format(' E=', f9.5, ' section efficace(mb)=', e19.5)
 
         ! end fusion cross section with WONG FORMULA
@@ -1102,8 +1105,8 @@ contains
                     if (opt6 == 0) then
                         write (*, 1695) ll5, elmax, rol, jol, ra, rb, ndim, tl(l), hw
 1695                    format(' L=', I3, ' ELMAX=', F8.3, ' ROL=', F6.3, ' JOL=', &
-                                                         & I3, ' RA=', F6.3, /, ' RB=', F6.3, ' NDIM=', I3, &
-                                                         & ' TL=', F9.7, ' HW=', E11.3)
+                                                                            & I3, ' RA=', F6.3, /, ' RB=', F6.3, ' NDIM=', I3, &
+                                                                            & ' TL=', F9.7, ' HW=', E11.3)
                     end if
 
                     l7 = ll5
@@ -1119,8 +1122,8 @@ contains
 
                 WRITE (*, 1720) l7, emaxl, rrol, jjol, rra, rrb, nndim, ttl, hww
 1720            format(' L=', I3, ' ELMAX=', F8.3, ' ROL=', F6.3, ' JOL=', I3, &
-                                                    & ' RA=', F6.3, /, '  RB=', F6.3, ' NDIM=', I3, ' TL=', F9.7, &
-                                                    & ' HW=', E11.3)
+                                                               & ' RA=', F6.3, /, '  RB=', F6.3, ' NDIM=', I3, ' TL=', F9.7, &
+                                                               & ' HW=', E11.3)
 1619            sect = 0.
                 do le = 1, lmax
                     sect = sect + pila2*(2.*(le - 1) + 1.)*tl(le)
@@ -1336,129 +1339,124 @@ contains
         end if
     end function bmas
 
-
-
 ! axially symmetrical(u=0) spherical harmonics function Y(l, t) and Legendre polynomial LegendreP(l,t)
-! ps : l order higher 6 is temporarily omitted. 
+! ps : l order higher 6 is temporarily omitted.
     function yy(l, t) ! SPHERICAL HARMONICS OF ORDER L(order 1->6)
         INTEGER :: l
         real(8) :: t, yy
-        real(8),parameter :: PI = 3.141592653589793
-        yy = SQRT((2._8*l+1)/4/PI)* LegendreP(l,t)
+        real(8), parameter :: PI = 3.141592653589793
+        yy = SQRT((2._8*l + 1)/4/PI)*LegendreP(l, t)
     end function yy
 
-    function LegendreP(l,t)
+    function LegendreP(l, t)
         INTEGER :: l
         real(8) :: t, LegendreP
         ! PRIVATE vars
-        select case(l)
-        case (1);  LegendreP = t
-        case (2);  LegendreP = ( -1  + 3*t**2)/2
-        case (3);  LegendreP = (-3*t + 5*t**3)/2
-        case (4);  LegendreP = (  3 -30*t**2 + 35*t**4)/8
-        case (5);  LegendreP = (15*t-70*t**3 + 63*t**5)/8
-        case (6);  LegendreP = ( -5+105*t**2 -315*t**4 + 231*t**6)/16
+        select case (l)
+        case (1); LegendreP = t
+        case (2); LegendreP = (-1 + 3*t**2)/2
+        case (3); LegendreP = (-3*t + 5*t**3)/2
+        case (4); LegendreP = (3 - 30*t**2 + 35*t**4)/8
+        case (5); LegendreP = (15*t - 70*t**3 + 63*t**5)/8
+        case (6); LegendreP = (-5 + 105*t**2 - 315*t**4 + 231*t**6)/16
         case default; LegendreP = 0. ! a general function for legendre polynomial is still absent ,from wiki https://en.wikipedia.org/wiki/Legendre_polynomials :
 !             alt="{\displaystyle {\begin{aligned}P_{n}(x)&={\frac {1}{2^{n}}}\sum _{k=0}^{n}{\binom {n}{k}}^{2}(x-1)^{n-k}(x+1)^{k}\\&=\sum _{k=0}^{n}{\binom {n}{k}}{\binom {-n-1}{k}}\left({\frac {1-x}{2}}\right)^{k}\\&=2^{n}\sum _{k=0}^{n}x^{k}{\binom {n}{k}}{\binom {\frac {n+k-1}{2}}{n}}\,,\end{aligned}}}"
         end select
     end function LegendreP
 
-
-
     ! Shell effect at the sphere
-        function shellempirical(a, z) result(res)
-            integer, intent(in) :: a, z
-            integer :: n
-            real(8) :: res, xa, xz, xn, rmimi, rmi, fn, qin, fz, qiz
-            n = a - z
-            xa = a
-            xz = z
-            xn = n
-            if(n < 8) then
-                rmimi = 2.
-                rmi = 8.
-            endif
-            if(n > 8 .and. n < 20) then
-                rmimi = 8.
-                rmi = 20.
-            endif
-            if(n > 20 .and. n < 28) then
-                rmimi = 20.
-                rmi = 28.
-            endif
-            if(n > 28 .and. n < 50) then
-                rmimi = 28.
-                rmi = 50.
-            endif
-            if(n > 50 .and. n < 82) then
-                rmimi = 50.
-                rmi = 82.
-            endif
-            if(n > 82 .and. n < 126) then
-                rmimi = 82.
-                rmi = 126.
-            endif
-            if(n > 126 .and. n < 184) then
-                rmimi = 126.
-                rmi = 184.
-            endif
-            if(n > 184 .and. n < 258) then
-                rmimi = 184.
-                rmi = 258.
-            endif
+    function shellempirical(a, z) result(res)
+        integer, intent(in) :: a, z
+        integer :: n
+        real(8) :: res, xa, xz, xn, rmimi, rmi, fn, qin, fz, qiz
+        n = a - z
+        xa = a
+        xz = z
+        xn = n
+        if (n < 8) then
+            rmimi = 2.
+            rmi = 8.
+        end if
+        if (n > 8 .and. n < 20) then
+            rmimi = 8.
+            rmi = 20.
+        end if
+        if (n > 20 .and. n < 28) then
+            rmimi = 20.
+            rmi = 28.
+        end if
+        if (n > 28 .and. n < 50) then
+            rmimi = 28.
+            rmi = 50.
+        end if
+        if (n > 50 .and. n < 82) then
+            rmimi = 50.
+            rmi = 82.
+        end if
+        if (n > 82 .and. n < 126) then
+            rmimi = 82.
+            rmi = 126.
+        end if
+        if (n > 126 .and. n < 184) then
+            rmimi = 126.
+            rmi = 184.
+        end if
+        if (n > 184 .and. n < 258) then
+            rmimi = 184.
+            rmi = 258.
+        end if
 
-            if(n == 8 .or. n ==20 .or. n==28 .or. n==50 .or. n == 82 &
-            & .or. n == 126 .or. n ==258) then
-                fn = 0.
-            else
-                qin = 0.6*(rmi**(5./3.) - rmimi**(5./3.))/(rmi - rmimi)
-                fn = qin*(xn - rmimi) - 0.6*(xn**(5./3.) - rmimi**(5./3.))
-            endif
+        if (n == 8 .or. n == 20 .or. n == 28 .or. n == 50 .or. n == 82 &
+        & .or. n == 126 .or. n == 258) then
+            fn = 0.
+        else
+            qin = 0.6*(rmi**(5./3.) - rmimi**(5./3.))/(rmi - rmimi)
+            fn = qin*(xn - rmimi) - 0.6*(xn**(5./3.) - rmimi**(5./3.))
+        end if
 
-            if(z < 8) then
-                rmimi = 2.
-                rmi = 8.
-            endif
-            if(z > 8 .and. z < 20) then
-                rmimi = 8.
-                rmi = 20.
-            endif
-            if(z > 20 .and. z < 28) then
-                rmimi = 20.
-                rmi = 28.
-            endif
-            if(z > 28 .and. z < 50) then
-                rmimi = 28.
-                rmi = 50.
-            endif
-            if(z > 50 .and. z < 82) then
-                rmimi = 50.
-                rmi = 82.
-            endif
-            if(z > 82 .and. z < 126) then
-                rmimi = 82.
-                rmi = 126.
-            endif
-            if(z > 126 .and. z < 184) then
-                rmimi = 126.
-                rmi = 184.
-            endif
-            if(z > 184 .and. z < 258) then
-                rmimi = 184.
-                rmi = 258.
-            endif
+        if (z < 8) then
+            rmimi = 2.
+            rmi = 8.
+        end if
+        if (z > 8 .and. z < 20) then
+            rmimi = 8.
+            rmi = 20.
+        end if
+        if (z > 20 .and. z < 28) then
+            rmimi = 20.
+            rmi = 28.
+        end if
+        if (z > 28 .and. z < 50) then
+            rmimi = 28.
+            rmi = 50.
+        end if
+        if (z > 50 .and. z < 82) then
+            rmimi = 50.
+            rmi = 82.
+        end if
+        if (z > 82 .and. z < 126) then
+            rmimi = 82.
+            rmi = 126.
+        end if
+        if (z > 126 .and. z < 184) then
+            rmimi = 126.
+            rmi = 184.
+        end if
+        if (z > 184 .and. z < 258) then
+            rmimi = 184.
+            rmi = 258.
+        end if
 
-            if(z == 8 .or. z ==20 .or. z==28 .or. z==50 .or. z == 82 &
-            & .or. z == 126 .or. z ==258) then
-                fz = 0.
-            else
-                qiz = 0.6*(rmi**(5./3.) - rmimi**(5./3.))/(rmi - rmimi)
-                fz = qiz*(xz - rmimi) - 0.6*(xz**(5./3.) - rmimi**(5./3.))
-            endif
+        if (z == 8 .or. z == 20 .or. z == 28 .or. z == 50 .or. z == 82 &
+        & .or. z == 126 .or. z == 258) then
+            fz = 0.
+        else
+            qiz = 0.6*(rmi**(5./3.) - rmimi**(5./3.))/(rmi - rmimi)
+            fz = qiz*(xz - rmimi) - 0.6*(xz**(5./3.) - rmimi**(5./3.))
+        end if
 
-            res = 5.8 * ((fn + fz)/(0.62996*xa**(2./3.)) - 0.28*xa**(1./3.))
+        res = 5.8*((fn + fz)/(0.62996*xa**(2./3.)) - 0.28*xa**(1./3.))
 
-
-            end function shellempirical
+    end function shellempirical
 
 end module hello_gldm
